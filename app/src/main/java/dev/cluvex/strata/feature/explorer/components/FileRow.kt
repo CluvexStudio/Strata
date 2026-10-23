@@ -398,7 +398,14 @@ private fun KindIcon(item: FileItem, iconSize: Dp, shape: Shape) {
     val colors = MaterialTheme.colorScheme
     val settings = LocalSettings.current
     val kind = FileKinds.of(item)
-    val tile = KindPalette.colors(kind, settings.appearance.colorfulIcons, colors, colors.background.luminance() < 0.5f)
+    val variant = FileKinds.variantOf(item)
+    val tile = KindPalette.colors(
+        kind,
+        settings.appearance.colorfulIcons,
+        colors,
+        colors.background.luminance() < 0.5f,
+        variant?.let { KindPalette.hue(it) },
+    )
     Box(
         Modifier
             .size(iconSize)
@@ -407,7 +414,7 @@ private fun KindIcon(item: FileItem, iconSize: Dp, shape: Shape) {
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            kind.icon,
+            variant?.icon ?: kind.icon,
             contentDescription = stringResource(kind.label),
             tint = tile.content,
             modifier = Modifier.padding(iconSize * 0.22f),

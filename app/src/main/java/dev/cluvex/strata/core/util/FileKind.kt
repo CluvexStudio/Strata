@@ -6,16 +6,23 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.TextSnippet
 import androidx.compose.material.icons.rounded.Android
+import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.DataObject
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Difference
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.FolderZip
 import androidx.compose.material.icons.rounded.FontDownload
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Movie
+import androidx.compose.material.icons.rounded.Notes
 import androidx.compose.material.icons.rounded.PictureAsPdf
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.TableChart
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.cluvex.strata.core.model.FileItem
 
@@ -58,6 +65,22 @@ enum class FileKind {
         }
 }
 
+/**
+ * Finer-grained flavours of [FileKind.TEXT]: the kind decides how the file is opened, while the
+ * variant only changes how it looks in a listing. Everything in the text family used to share one
+ * glyph and one hue, which made `notes.txt`, `README.md` and `config.json` indistinguishable.
+ */
+enum class FileVariant(val icon: ImageVector) {
+    MARKDOWN(Icons.Rounded.Article),
+    JSON(Icons.Rounded.DataObject),
+    XML(Icons.Rounded.Code),
+    YAML(Icons.Rounded.Settings),
+    CSV(Icons.Rounded.TableChart),
+    LOG(Icons.Rounded.Notes),
+    CONFIG(Icons.Rounded.Tune),
+    DIFF(Icons.Rounded.Difference),
+}
+
 object FileKinds {
 
     private val image = setOf("png", "jpg", "jpeg", "gif", "webp", "bmp", "heic", "heif", "ico", "svg")
@@ -75,9 +98,29 @@ object FileKinds {
     private val text = setOf(
         "txt", "md", "json", "xml", "yml", "yaml", "toml", "ini", "cfg", "conf",
         "properties", "prop", "log", "csv", "tsv", "mtl", "mtsx", "diff", "patch",
+        "markdown", "mdown", "mkd", "mdx", "json5", "jsonc", "ndjson", "plist",
     )
     private val font = setOf("ttf", "otf", "woff", "woff2", "ttc")
     private val document = setOf("doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "rtf", "epub")
+
+    private val variants: Map<String, FileVariant> = buildMap {
+        fun putAll(variant: FileVariant, vararg extensions: String) = extensions.forEach { put(it, variant) }
+        putAll(FileVariant.MARKDOWN, "md", "markdown", "mdown", "mkd", "mdx")
+        putAll(FileVariant.JSON, "json", "json5", "jsonc", "ndjson")
+        putAll(FileVariant.XML, "xml", "xsd", "xsl", "xslt", "plist")
+        putAll(FileVariant.YAML, "yml", "yaml")
+        putAll(FileVariant.CSV, "csv", "tsv")
+        putAll(FileVariant.LOG, "log")
+        putAll(FileVariant.CONFIG, "ini", "cfg", "conf", "properties", "prop", "toml")
+        putAll(FileVariant.DIFF, "diff", "patch")
+    }
+
+    /** The look of a file inside [FileKind.TEXT], or null when the generic text glyph is right. */
+    fun variantOf(item: FileItem): FileVariant? {
+        if (item.isDirectory) return null
+        if (of(item) != FileKind.TEXT) return null
+        return variants[item.extension]
+    }
 
     fun of(item: FileItem): FileKind {
         if (item.isDirectory) return FileKind.FOLDER
