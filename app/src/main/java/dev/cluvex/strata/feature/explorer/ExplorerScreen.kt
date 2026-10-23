@@ -99,6 +99,7 @@ import dev.cluvex.strata.feature.explorer.components.InputSelection
 import dev.cluvex.strata.feature.explorer.components.ItemActionSheet
 import dev.cluvex.strata.feature.explorer.components.ItemActions
 import dev.cluvex.strata.feature.explorer.components.MergeDialog
+import dev.cluvex.strata.feature.explorer.components.NewFileSuffixes
 import dev.cluvex.strata.feature.explorer.components.PaneColumn
 import dev.cluvex.strata.feature.explorer.components.PasswordDialog
 import dev.cluvex.strata.feature.explorer.components.SortSheet
@@ -438,6 +439,7 @@ fun ExplorerScreen(
         )
         is Dialog.NewFile -> InputDialog(
             title = stringResource(R.string.common_new_file), label = stringResource(R.string.explorer_file_name),
+            suffixes = NewFileSuffixes,
             onConfirm = { vm.newFile(d.pane, it); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )

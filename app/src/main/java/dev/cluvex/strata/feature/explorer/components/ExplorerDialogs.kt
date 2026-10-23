@@ -3,6 +3,8 @@ package dev.cluvex.strata.feature.explorer.components
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -60,6 +62,12 @@ enum class InputSelection {
     BASE_NAME,
 }
 
+/** Suffixes offered as one-tap chips when a new file is created. */
+val NewFileSuffixes = listOf(
+    ".txt", ".md", ".json", ".xml", ".yaml", ".ini", ".log", ".csv", ".sh", ".py", ".js", ".html", ".css",
+)
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun InputDialog(
     title: String,
@@ -68,6 +76,7 @@ fun InputDialog(
     confirmText: String = stringResource(R.string.common_ok),
     select: InputSelection = InputSelection.END,
     ltr: Boolean = false,
+    suffixes: List<String> = emptyList(),
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -83,22 +92,53 @@ fun InputDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            OutlinedTextField(
-                value = value,
-                onValueChange = { value = it },
-                label = { Text(label) },
-                singleLine = true,
-                textStyle = if (ltr) LocalTextStyle.current.copy(textDirection = TextDirection.Ltr) else LocalTextStyle.current.copy(textDirection = TextDirection.Content),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { confirm() }),
-                modifier = Modifier.focusRequester(focus),
-            )
+            Column {
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    label = { Text(label) },
+                    singleLine = true,
+                    textStyle = if (ltr) LocalTextStyle.current.copy(textDirection = TextDirection.Ltr) else LocalTextStyle.current.copy(textDirection = TextDirection.Content),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { confirm() }),
+                    modifier = Modifier.focusRequester(focus),
+                )
+                if (suffixes.isNotEmpty()) {
+                    FlowRow(
+                        Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        for (suffix in suffixes) {
+                            val typed = value.text.trimEnd()
+                            FilterChip(
+                                selected = typed.length > suffix.length && typed.endsWith(suffix, ignoreCase = true),
+                                onClick = {
+                                    val next = withSuffix(typed, suffix)
+                                    value = TextFieldValue(next, selection = TextRange(next.length))
+                                },
+                                label = { Text(suffix) },
+                            )
+                        }
+                    }
+                }
+            }
         },
         confirmButton = {
             TextButton(onClick = confirm, enabled = value.text.isNotBlank()) { Text(confirmText) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
     )
+}
+
+/** Swaps a trailing extension for [suffix], or appends it when the name does not have one yet. */
+internal fun withSuffix(name: String, suffix: String): String {
+    val trimmed = name.trimEnd()
+    if (trimmed.isEmpty()) return suffix.trimStart('.')
+    if (trimmed.endsWith('.')) return trimmed + suffix.trimStart('.')
+    val dot = trimmed.lastIndexOf('.')
+    val tail = if (dot > 0) trimmed.substring(dot + 1) else ""
+    val hasExtension = tail.isNotEmpty() && tail.length <= 12 && tail.all { it.isLetterOrDigit() }
+    return (if (hasExtension) trimmed.substring(0, dot) else trimmed) + suffix
 }
 
 internal fun selectionFor(text: String, select: InputSelection): TextRange = when (select) {
