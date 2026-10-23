@@ -161,8 +161,12 @@ private class LocalImages(private val folder: String) : ImageTransformer {
     override fun transform(link: String): ImageData {
         val path = MarkdownLinks.imagePath(folder, link)
             ?: return ImageData(rememberVectorPainter(Icons.Rounded.BrokenImage), contentDescription = stringResource(R.string.markdown_remote_image))
-        val request = ImageRequest.Builder(LocalPlatformContext.current).data(File(path)).build()
-        return ImageData(rememberAsyncImagePainter(request), contentDescription = File(path).name)
+        val context = LocalPlatformContext.current
+        // Built once per image: a fresh ImageRequest on every recomposition makes Coil restart the
+        // load, which is what made images flash while the preview was being scrolled.
+        val request = remember(path, context) { ImageRequest.Builder(context).data(File(path)).build() }
+        val name = remember(path) { File(path).name }
+        return ImageData(rememberAsyncImagePainter(request), contentDescription = name)
     }
 
     @Composable
